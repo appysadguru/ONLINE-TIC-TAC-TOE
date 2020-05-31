@@ -16,8 +16,12 @@ to connect two players and run the game respectively. The front-end interacts wi
 Usage:
 
 Click on the 'Start' button to get started.
+
 Once a opponent is found, you will be assigned either 'X' or 'O'.
+
 If it is your turn,  within 30 sec, click on the button you wish to place your letter at. Timer will be displayed.
+
 If it is your opponent's turn, just wait. You will be notified if it is your turn.
+
 Whoever forms a horizontal/vertical/diagonal sequence of the assigned letter first, wins.
 
