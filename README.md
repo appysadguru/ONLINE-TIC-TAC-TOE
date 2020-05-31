@@ -29,7 +29,7 @@ If it is your opponent's turn, just wait. You will be notified if it is your tur
 Whoever forms a horizontal/vertical/diagonal sequence of the assigned letter first, wins.
 
 
-Game Website Link:
+Game Link:
 
 http://online-tictactoe.s3-website.us-east-2.amazonaws.com
 
