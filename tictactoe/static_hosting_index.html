@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>ONLINE TIC-TAC-TOE</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+    </head>
+    <body>
+        <script>
+        
+            jQuery(document).ready(function() {
+            
+                // create a game object with the given odd number(data)
+                function createGame(data, textStatus, jqXHR) {
+                    console.log("inside createGame")
+                    $.ajax( {
+                        url : "https://8qt1x596ic.execute-api.us-east-2.amazonaws.com/dev/",
+                        type: "POST",
+                        data : JSON.stringify({"returned_count": data}),
+                        contentType:"application/json; charset=utf-8",
+                        success: function(data, textStatus, jqXHR) {
+                            console.log("About to call searchingOpponent with returned_count: ",data)
+                            searchingOpponent(data, textStatus, jqXHR)
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            $("#result").text(jqXHR.responseJSON)
+                            
+                            // make the 'Start' button visible so that a new game can be created
+                            $("#button1").removeClass("invisible")
+                            $("#game_status").text("Error while searching. Please try again")
+                        }
+                    });
+                }
+                
+                // keep checking if an opponent joined the newly created game
+                function searchingOpponent(data, textStatus, jqXHR) {
+                    console.log("inside searchingOpponent")
+                    var timeout_id_array=[]
+                    var timeout_id
+                    
+                    /* set timer functions that execute every 1 sec for sixty times. If a call succeeds(opponent has joined the game),
+                    then clear the timer functions and re-direct to a new web page   */
+                    for (let i=0; i<60; i++) {
+                        
+                        timeout_id = setTimeout(
+                            function(){
+                                
+                                $.ajax( {
+                                    url: "https://8qt1x596ic.execute-api.us-east-2.amazonaws.com/dev/", 
+                                    type: 'PATCH',
+                                    data : JSON.stringify({"returned_count": data}),
+                                    contentType:"application/json; charset=utf-8",
+                                })
+                                .done(function(data, textStatus, jqXHR) {
+                                    
+                                    var whichPlayer = "player1"
+                                    // clear the timer functions
+                                    timeout_id_array.forEach(function (item, index) {   clearTimeout(item)  });
+                                    
+                                    // send the data to the new web page as query string parameters
+                                    var url = "http://online-tictactoe.s3-website.us-east-2.amazonaws.com/static_hosting_core.html"+"?gameId="+data+"&whichPlayer="+whichPlayer
+                                    window.open(url, "_self");
+                                    
+                                }) 
+                                .fail(function(jqXHR, textStatus, errorThrown) {
+                                
+                                    // wait if a call fails(no one joined the game). If it is the last call, expire the game
+                                    if (jqXHR.responseJSON=="odd - wait") {
+                                        if (i==59) {
+                                            console.log("About to call expireGame")
+                                            expireGame(data)
+                                            
+                                            $("#button1").removeClass("invisible")
+                                            $("#game_status").text("No player found ......(players are scared to play with you). Please try again")
+                                        }
+                                    }
+                                    else {
+                                        // expire the game if the call fails with an unknown error
+                                        timeout_id_array.forEach(function (item, index) {   clearTimeout(item)  });
+                                        
+                                        console.log("About to call expireGame")
+                                        expireGame(data)
+                                        
+                                        $("#button1").removeClass("invisible")
+                                        $("#game_status").text("Error while searching. Please try again")
+                                    }
+                                })
+                                
+                            }, 1000*i); 
+                        timeout_id_array.push(timeout_id)   
+                    }
+                }
+                
+                // expire the game so that no player joins the newly created game
+                function expireGame(data) {
+                     console.log("inside expireGame")
+                    $.ajax( {
+                        url : "https://vtderwgd0d.execute-api.us-east-2.amazonaws.com/dev/",
+                        type: "PATCH",
+                        data : JSON.stringify({"returned_count": data}),
+                        contentType:"application/json; charset=utf-8",
+                        success: function(data, textStatus, jqXHR) {
+                            console.log("Game expired")
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.log(jqXHR.responseJSON)
+                            console.log("failed to expire the game")
+                        }
+                    });
+                }
+                
+                // join the game which is created by the opponent
+                function joinGame(data, textStatus, jqXHR) {
+                    console.log("inside joinGame")
+                    $.ajax({
+                        url : "https://m9k5w8dn8b.execute-api.us-east-2.amazonaws.com/dev/",
+                        type: "PATCH",
+                        data : JSON.stringify({"returned_count": data}),
+                        contentType:"application/json; charset=utf-8",
+                        success: function(data, textStatus, jqXHR) {
+                        
+                            console.log("About to call confirmOpponent",data)
+                            confirmOpponent(data, textStatus, jqXHR)
+                            
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                        
+                            if (jqXHR.responseJSON.includes("Immediate")) {
+                                console.log(jqXHR.responseJSON)
+                                $("#button1").trigger("click");
+                            }
+                            else {
+                                $("#result").text(jqXHR.responseJSON)
+                                
+                                $("#button1").removeClass("invisible")
+                                $("#game_status").text("Error while searching. Please try again")
+                            }
+                        }
+                    });
+                }
+                
+                // confirm the opponent has not expired the game after you(player2) joined the game
+                function confirmOpponent(data, textStatus, jqXHR) {
+                    console.log("inside confirmOpponent")
+                    $.ajax( {
+                        url : "https://m9k5w8dn8b.execute-api.us-east-2.amazonaws.com/dev?returned_count="+data,
+                        type: "GET",
+                        success: function(data, textStatus, jqXHR) {
+                            var whichPlayer = "player2"
+                    
+                            console.log("success: ", data)
+                            
+                            // send the data to the new web page as query string parameters
+                            var url = "http://online-tictactoe.s3-website.us-east-2.amazonaws.com/static_hosting_core.html"+"?gameId="+data+"&whichPlayer="+whichPlayer
+                            window.open(url, "_self");
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            $("#result").text(jqXHR.responseJSON)
+                            // Re-direct
+                            
+                            $("#button1").removeClass("invisible")
+                            $("#game_status").text("Error while searching. Please try again")
+                        }
+                    });
+                }
+                
+                // Execution starts from here. If the 'Start' button is clicked
+                $("#button1").click(function() {
+                    
+                    // during the search for an opponent, keep the button invisible
+                    $("#button1").addClass("invisible")
+                    $("#game_status").text("Searching for a worthy opponent.....")
+                    
+                    /* make an ajax call to increment the 'count'(in the backend) and if it is an odd number, create a new game
+                    with the gameId as the odd number. Person who got an odd number will be considered as player1 for that 
+                    game(gameId). If it is an even number then join a game which has the gameId one number less than the even 
+                    number(taken care in the backend, just send the even number to the backend). Person who got an even number
+                    will be considered as player2 */
+                    $.ajax( {
+                        url: "https://ga3eks8jxg.execute-api.us-east-2.amazonaws.com/dev/", 
+                        type: 'PATCH',
+                    })
+                    .done(function(data, textStatus, jqXHR) {
+                        if (data % 2 == 1) {
+                            console.log("About to call createGame with count: ",data)
+                            createGame(data, textStatus, jqXHR)
+                        }
+                        else {
+                            console.log("About to call joinGame with count: ",data)
+                            joinGame(data, textStatus, jqXHR)
+                        }
+                    })
+                    .fail(function(jqXHR, textStatus, errorThrown) { 
+                        $("#result").text(jqXHR.responseJSON) 
+                        
+                        $("#button1").removeClass("invisible")
+                        $("#game_status").text("Error while searching. Please try again")
+                    })
+                });
+                
+            });
+        
+        </script>
+        
+        <h2 class="text-center">ONLINE TIC-TAC-TOE</h2>
+        
+        <p>Instructions:</p>
+        <ul class="a" style="list-style-type: disc">
+          <li>Once a opponent is found, you will be assigned either 'X' or 'O'. </li>
+          <li>If it is your turn,  within 30 sec, click on the button you wish to place your letter at. Timer will be displayed.</li>
+          <li>If it is your opponent's turn, just wait. You will be notified if it is your turn.</li>
+          <li>Whoever forms a horizontal/vertical/diagonal sequence of the assigned letter first, wins.</li>
+        </ul>
+        <p>Click to begin!</p>
+        
+        <button class="btn btn-light" id="button1">Start</button><br>
+        
+        <span id="game_status"></span>
+            
+        <p id="result"></p>
+    
+    </body>
+</html>

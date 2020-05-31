@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>ONLINE TIC-TAC-TOE</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+    </head>
+    <body>
+        <script>
+            
+                
+            jQuery(document).ready(function() {
+            
+                // get the gameId and player identity(player1 or player2) from the query string parameters
+                var URLPARAMS = new URLSearchParams(window.location.search)
+                var GAMEID = parseInt(URLPARAMS.get('gameId'))
+                var WHICHPLAYER = URLPARAMS.get('whichPlayer')
+                var LENGTHOFENTEREDINPUTS = 0
+                var WAITFLAG
+                
+                // load the 3*3 matrix with the values from the array - board_list containing inputs in the respective indexes
+                function loadMatrix(board_list) {
+                    
+                    board_list.forEach(function (item, index) {
+                        if (item == "X") {
+                            var respectiveId = "g" + index
+                            $("#"+respectiveId).text(item)
+                            $("#"+respectiveId).addClass("text-info")
+                        }
+                        else if(item == "O") {
+                            var respectiveId = "g" + index
+                            $("#"+respectiveId).text(item)
+                            $("#"+respectiveId).addClass("text-danger")
+                        }
+                    });
+                }
+                
+                // call this when it is the opponent's turn. 
+                function opponentTurn(GAMEID, LENGTHOFENTEREDINPUTS) {
+                    console.log("inside opponentTurn()")
+                    
+                    $("button").off("click");
+                    
+                    $("#time").text("")
+                    $("#time_text").text("")
+                    $("#result").text("Wait for opponent's move")
+                    
+                    WAITFLAG = 0
+                    var timeoutIdArray=[]
+                    var timeoutId
+                    
+                    /* set timer functions that execute every 1 sec for 35 times. Each timer function makes a ajax call to 
+                    check if the opponent entered an input(number of inputs increase by 1) and check the result of the game */
+                    for (let i=0; i<35; i++) {
+                        timeoutId = setTimeout(
+                            function() {
+                            
+                                $.ajax( {
+                                    url: "https://65rjwcxy2f.execute-api.us-east-2.amazonaws.com/dev?gameId="+GAMEID.toString(), 
+                                    type: 'GET',
+                                })
+                                .done(function(data, textStatus, jqXHR) {
+                                
+                                    if ((data.entered_inputs).length == LENGTHOFENTEREDINPUTS + 1) {
+                                    
+                                        // opponent entered the input. So, clear the timer functions
+                                        timeoutIdArray.forEach(function (item, index) {   clearTimeout(item)  });
+                                        
+                                        // load the updated data
+                                        loadMatrix(data.board_list)
+                                        
+                                        if(data.result == "keep going") {
+                                            /* flag to indicate that yourTurn fn is called and thereby to prevent the other timer
+                                                functions that couldn't be cleared, from calling yourTurn fn again */
+                                            if (WAITFLAG != 1) {
+                                                WAITFLAG = 1
+                                                /* now that the opponent entered  the input and the game is not finished call
+                                                yourTurn fn  */
+                                                yourTurn(GAMEID)
+                                            }
+                                        }
+                                        else {
+                                            $("#time").text("")
+                                            $("#time_text").text("")
+                                            $("#show_home").removeClass("invisible")
+                                            
+                                            if (data.result == WHICHPLAYER) {
+                                                $("#result").text("You Won !!! ")
+                                                $("#trophy").removeClass("invisible")
+                                            }
+                                            else if (data["result"] == "tie")
+                                                $("#result").text("It's a TIE")
+                                            else
+                                                $("#result").text("You Lost")
+                                        }
+                                    } 
+                                    else if (i==34) {
+                                        // opponent's input not detected even in the last call. Expire the game.
+                                        
+                                        $("#result").text("Game expired. Opponent didn't enter on time.")
+                                        $("#show_home").removeClass("invisible")
+                                        console.log("opponentTurn() - Timeout. Game expired")
+                                    }
+                                }) 
+                                .fail(function(jqXHR, textStatus, errorThrown) {
+                                    // expire the game
+                                    
+                                    $("#result").text("Error. Game expired")
+                                    $("#show_home").removeClass("invisible")
+                                    
+                                    console.log("opponentTurn() - Error. Game expired")
+                                    console.log("jqXHR.responseJSON ", jqXHR.responseJSON)
+                                    
+                                })
+                                
+                            }, 1000*i); 
+                        timeoutIdArray.push(timeoutId)   
+                    }
+                }
+                
+                // call this when it is your turn
+                function yourTurn(GAMEID) {
+                    console.log("inside yourTurn()")
+                    
+                    var timeoutIdArray2=[]
+                    var timeoutId2
+                    var timeLeft
+                    
+                    $("#time_text").text("Time remaining: ")
+                    
+                    // set timer functions to show the time remaining
+                    for (let i=0; i<31; i++) {
+                        
+                        timeoutId2 = setTimeout(
+                            function() {
+                                timeLeft = 30-i
+                                $("#time").text(timeLeft)
+                                
+                                if(i==30) {
+                                    // expire
+                                    
+                                    $("button").off("click");
+                                    
+                                    $("#time").text("")
+                                    $("#time_text").text("")
+                                    $("#result").text("Timeout. Game expired")
+                                    $("#show_home").removeClass("invisible")
+                                    
+                                    console.log("yourTurn() - Timeout. Game expired")
+                                    
+                                    // add button for homepage
+                                }
+                                
+                            }, 1000*i); 
+                        timeoutIdArray2.push(timeoutId2)   
+                    }
+                    
+                    // event triggered when input is entered
+                    $("button").click(function(e) {
+                        e.preventDefault();
+                        
+                        // disable the events so that they won't trigger even if the buttons are clicked again
+                        $("button").off("click");
+                        
+                        console.log("button clicked")
+                        
+                        // clear the timer fns to stop showing the time 
+                        timeoutIdArray2.forEach(function (item, index) {  clearTimeout(item)  });
+                        
+                        // get the data attribute of the button clicked
+                        var inputPosition = parseInt($(e.target).data("value"))
+                        console.log("Entered input: ", inputPosition)
+                        
+                        $("#time").text()
+                        $("#time_text").text()
+                        
+                        // send the input to update the database
+                        $.ajax( {
+                            url: "https://65rjwcxy2f.execute-api.us-east-2.amazonaws.com/dev/", 
+                            type: "PATCH",
+                            data : JSON.stringify({"gameId": GAMEID, "input_position": inputPosition, "which_player": WHICHPLAYER}),
+                            contentType:"application/json; charset=utf-8",
+                        })
+                        .done(function(data, textStatus, jqXHR) {
+                        
+                            // load the updated data
+                            loadMatrix(data.board_list)
+                            
+                            // now that the db is updated with the input and game not finished, call opponentTurn fn
+                            if(data.result == "keep going")
+                                opponentTurn(GAMEID, (data.entered_inputs).length)
+                            else {
+                                $("#time").text("")
+                                $("#time_text").text("")
+                                $("#show_home").removeClass("invisible")
+                                
+                                if (data.result == WHICHPLAYER) {
+                                    $("#result").text("You Won !!! ")
+                                    $("#trophy").removeClass("invisible")
+                                }
+                                else if (data.result == "tie")
+                                    $("#result").text("It's a TIE")
+                                else
+                                    $("#result").text("You Lost")
+                            }
+                        
+                        })
+                        .fail(function(jqXHR, textStatus, errorThrown) { 
+                            // expire
+                            
+                            $("button").off("click")
+                            $("#time").text("")
+                            $("#time_text").text("")
+                            $("#result").text("Error. Game expired")
+                            $("#show_home").removeClass("invisible")
+                            
+                            console.log("yourTurn() - Error. Game expired")
+                            console.log("jqXHR.responseJSON ", jqXHR.responseJSON)
+                            
+                            // add button for homepage
+                        })
+                        
+                    })        
+                    
+                    $("#result").text("Enter input, you have 30 secs")
+                    
+                }
+                   
+                $("#show_gameid").text(GAMEID)
+                $("#identity_text").text("You are ")
+                
+                /* if it is player1(one who created the game) then get the input else wait till player1 on the other end of the game
+                to enter the input */
+                if (WHICHPLAYER == "player1") {
+                    $("#identity").text("X")
+                    $("#identity").addClass("text-info")
+                    yourTurn(GAMEID) 
+                }
+                else {
+                    $("#identity").text("O")
+                    $("#identity").addClass("text-danger")
+                    opponentTurn(GAMEID, LENGTHOFENTEREDINPUTS) 
+                }
+                
+            });
+        
+    </script>
+        <h2 class="text-center">ONLINE TIC-TAC-TOE</h2>
+        
+        <span id="show_gameid_text">Game ID: </span><span id="show_gameid"></span><br>
+        <span id="identity_text"></span><span id="identity"></span><br>
+        <span id="result"></span><i id="trophy" class="fa fa-trophy invisible" style="color:#FFD700" data-toggle="tooltip" title="Proud of you"></i><br>
+        <span id="time_text"></span><span id="time"></span><br>
+        <a href="http://online-tictactoe.s3-website.us-east-2.amazonaws.com/"  style="color:black"><i id="show_home" class="fa fa-home fa-2x invisible" data-toggle="tooltip" title="Return to home page"></i></a><br>
+        
+        <table class="table table-bordered border-0">
+            <tbody>
+                <tr class="d-flex">
+                    <td class="col-sm text-center border-top-0 border-left-0"><h1 class="display-4" id="g0"><button type="button" class="btn" data-value="1" style="background-color:#F5F5F5"><p class="invisible">invisible text</p></button></h1></td>
+                    <td class="col-sm text-center border-top-0"><h1 class="display-4" id="g1"><button type="button" class="btn" data-value="2" style="background-color:#F5F5F5"><p class="invisible">invisible text</p></button></h1></td>
+                    <td class="col-sm text-center border-top-0 border-right-0"><h1 class="display-4" id="g2"><button type="button" class="btn" data-value="3" style="background-color:#F5F5F5"><p class="invisible">invisible text</p></button></h1></td>
+                </tr>
+                <tr class="d-flex">
+                    <td class="col-sm text-center border-left-0"><h1 class="display-4" id="g3"><button type="button" class="btn" data-value="4" style="background-color:#F5F5F5"><p class="invisible">invisible text</p></button></h1></td>
+                    <td class="col-sm text-center"><h1 class="display-4" id="g4"><button type="button" class="btn" data-value="5" style="background-color:#F5F5F5"><p class="invisible">invisible text</p></button></h1></td>
+                    <td class="col-sm text-center border-right-0"><h1 class="display-4" id="g5"><button type="button" class="btn" data-value="6" style="background-color:#F5F5F5"><p class="invisible">invisible text</p></button></h1></td>
+                </tr>
+                <tr class="d-flex">
+                    <td class="col-sm text-center border-left-0 border-bottom-0"><h1 class="display-4" id="g6"><button type="button" class="btn" data-value="7" style="background-color:#F5F5F5"><p class="invisible">invisible text</p></button></h1></td>
+                    <td class="col-sm text-center border-bottom-0"><h1 class="display-4" id="g7"><button type="button" class="btn" data-value="8" style="background-color:#F5F5F5"><p class="invisible">invisible text</p></button></h1></td>
+                    <td class="col-sm text-center border-right-0 border-bottom-0"><h1 class="display-4" id="g8"><button type="button" class="btn" data-value="9" style="background-color:#F5F5F5"><p class="invisible">invisible text</p></button></h1></td>
+                </tr>
+            </tbody>
+        </table>
+        
+    </body>
+</html>
