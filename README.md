@@ -1,13 +1,13 @@
                                                 ONLINE TIC-TAC-TOE
 
-Description:
+DESCRIPTION:
 
 Users connected to the internet can play the game, will be connected at random and be able to play with one another.
 
 No more playing TIC-TAC-TOE from the same device and no user account creation needed. 
 
 
-Installation:
+INSTALLATION:
 
 Run the 'createGame.py' and 'createFirstRow.py' files as lambda files thereby creating 'Game' dynamoDB table with 'gameId' as the 
 partition key and the first item with field 'count'.
@@ -18,7 +18,7 @@ Host a S3 static website with 'static_hosting_index.html' as the index file and 
 to connect two players and run the game respectively. The front-end interacts with RESTAPIs and Ajax.
 
 
-Usage:
+USAGE:
 
 Click on the 'Start' button to get started.
 
@@ -32,7 +32,7 @@ Whoever forms a horizontal/vertical/diagonal sequence of the assigned letter fir
 
 
 
-Game Link:
+GAME LINK:
 
 http://online-tictactoe.s3-website.us-east-2.amazonaws.com
 
