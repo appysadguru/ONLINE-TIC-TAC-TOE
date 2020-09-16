@@ -6,6 +6,7 @@ Users connected to the internet can play the game, will be connected at random a
 
 No more playing TIC-TAC-TOE from the same device and no user account creation needed. 
 
+
 Installation:
 
 Run the 'createGame.py' and 'createFirstRow.py' files as lambda files thereby creating 'Game' dynamoDB table with 'gameId' as the 
@@ -15,6 +16,7 @@ Create the rest of the python files as lambda files and configure the RESTAPIs i
 
 Host a S3 static website with 'static_hosting_index.html' as the index file and 'static_hosting_core.html'. The two files are used
 to connect two players and run the game respectively. The front-end interacts with RESTAPIs and Ajax.
+
 
 Usage:
 
@@ -27,6 +29,7 @@ If it is your turn,  within 30 sec, click on the button you wish to place your l
 If it is your opponent's turn, just wait. You will be notified if it is your turn.
 
 Whoever forms a horizontal/vertical/diagonal sequence of the assigned letter first, wins.
+
 
 
 Game Link:
