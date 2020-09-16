@@ -4,10 +4,6 @@ import decimal
 import time
 from botocore.exceptions import ClientError
 
-#same letter in one of these sequences leads to win
-winning_sequences = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]
-dict_input = {"player1": "X", "player2": "O"}
-
 class DecimalEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, decimal.Decimal):
@@ -32,7 +28,7 @@ def return_data(status, text):
 #check if the pre-defined sequences of indexes(winning_sequences) have same consecutive letters in the given list(board_list)
 def sequence_check(board_list):
     
-    for sequence in winning_sequences:
+    for sequence in [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]:
         
         sequence_str = board_list[sequence[0]]+board_list[sequence[1]]+board_list[sequence[2]]
     
@@ -52,6 +48,8 @@ def lambda_handler(event, context):
     gameId = data["gameId"]
     which_player = data["which_player"]
     input_position = data["input_position"]
+    
+    dict_input = {"player1": "X", "player2": "O"}
     
     try:
         response = table.get_item(
